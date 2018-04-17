@@ -39,10 +39,12 @@
 #define rtp_get_payload_type(mp)	((rtp_header_t*)((mp)->b_rptr))->paytype
 #endif
 
+// Declare internel API functions for RTP
 int rtp_session_rtp_send (RtpSession * session, mblk_t * m);
-void testFunk(){
-	printf("cool nok fra C  :>\n");
-}
+
+// Declare internal API functions for RTCP
+mblk_t *rtcp_create_simple_bye_packet(uint32_t ssrc, const char *reason);
+int rtp_session_rtcp_send (RtpSession * session, mblk_t * m);
 
 MODULE = Net::oRTP	PACKAGE = Net::oRTP
 
@@ -61,20 +63,33 @@ ortp_shutdown()
 	ortp_exit();
 
 
-## Test stuff
-void
-testFunk();
+## Send RAW RTCP Bye packet
+int
+_raw_rtcp_bye_send(session, reason)
+	RtpSession* session
+	char *reason
+CODE:
+	mblk_t *cm;
+	mblk_t *sdes = NULL;
+	mblk_t *bye = NULL;
+	
+	/* Make a BYE packet (will be on the end of the compund packet). */
+	bye = rtcp_create_simple_bye_packet(session->snd.ssrc, reason);
+	cm=bye;
 
+	/* Send compound packet. */
+	RETVAL = rtp_session_rtcp_send(session, cm);
+OUTPUT:
+	RETVAL
 
 ## Send RAW RTP packet
 int
-raw_rtp_send(session, packet_ts, buffer)
+_raw_rtp_send(session, packet_ts, buffer)
 	RtpSession* session
 	int packet_ts
 	char *buffer
 CODE:
 	mblk_t *m;
-	printf("size of buffer: %lu\n", strlen(buffer)-1);
 	m = rtp_session_create_packet(session,RTP_FIXED_HEADER_SIZE,(uint8_t*)buffer,strlen(buffer));
 
 	rtp_header_t *rtp;

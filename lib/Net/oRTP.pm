@@ -65,16 +65,20 @@ sub new {
     bless $self, $class;
 	return $self;
 }
-sub testIt {
-	testFunk();
+
+sub raw_rtcp_bye_send {
+	my $self=shift;
+	my ($reason) = @_;
+	croak "Missing reason parameter" unless defined $reason;
+	_raw_rtcp_bye_send( $self->{'session'}, $reason);
 }
 
-sub raw_rtp_send2 {
-    	my $self=shift;
+sub raw_rtp_send {
+	my $self=shift;
 	my ($packet_ts, $data) = @_;
-	print "Sending RTP packet:\n";
-	print "Data: $data\n";
-	raw_rtp_send( $self->{'session'}, $packet_ts, $data);
+	croak "Missing RTP data parameter" unless defined $data;
+	croak "Missing RTP timestamp parameter" unless defined $packet_ts;
+	_raw_rtp_send( $self->{'session'}, $packet_ts, $data);
 }
 
 sub set_blocking_mode {
