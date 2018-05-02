@@ -1,4 +1,5 @@
 package Net::oRTP;
+	my $self=shift;
 
 ################
 #
@@ -66,6 +67,31 @@ sub new {
 	return $self;
 }
 
+sub get_rtp_fd {
+	my $self=shift;
+	return _get_rtp_fd($self->{'session'});
+}
+
+sub get_rtcp_fd {
+	my $self=shift;
+	return _get_rtcp_fd($self->{'session'});
+}
+
+sub set_reuseaddr {
+	my $self=shift;
+	my $yesno=shift;
+	rtp_session_set_reuseaddr($self->{'session'}, $yesno);
+}
+sub set_multicast_loopback {
+	my $self=shift;
+	my $yesno =shift;
+	rtp_session_set_multicast_loopback( $self->{'session'}, $yesno);
+}
+sub set_multicast_ttl {
+	my $self=shift;
+	my $ttl=shift;
+	rtp_session_set_multicast_ttl( $self->{'session'}, $ttl);
+}
 sub raw_rtcp_bye_send {
 	my $self=shift;
 	my ($reason) = @_;
@@ -90,9 +116,8 @@ sub set_blocking_mode {
 
 sub set_local_addr {
     my $self=shift;
-	my ($addr, $port) = @_;
-
-	return rtp_session_set_local_addr( $self->{'session'}, $addr, $port );
+	my ($addr, $port_rtp, $port_rtcp) = @_;
+	return rtp_session_set_local_addr( $self->{'session'}, $addr, $port_rtp, $port_rtcp );
 }
 
 sub get_local_port {

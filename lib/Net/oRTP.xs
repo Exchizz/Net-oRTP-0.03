@@ -46,6 +46,13 @@ int rtp_session_rtp_send (RtpSession * session, mblk_t * m);
 mblk_t *rtcp_create_simple_bye_packet(uint32_t ssrc, const char *reason);
 int rtp_session_rtcp_send (RtpSession * session, mblk_t * m);
 
+// Helper functions
+int get_rtcp_fd(RtpSession * session){
+	return session->rtcp.socket;
+}
+int get_rtp_fd(RtpSession * session){
+	return session->rtp.socket;
+}
 MODULE = Net::oRTP	PACKAGE = Net::oRTP
 
 
@@ -61,6 +68,40 @@ void
 ortp_shutdown()
   CODE:
 	ortp_exit();
+
+void
+rtp_session_set_multicast_loopback(session,yesno)
+	RtpSession*	session
+	int		yesno
+
+void
+rtp_session_set_multicast_ttl(session,ttl)
+	RtpSession*	session
+	int		ttl	
+
+void
+rtp_session_set_reuseaddr(session,yesno)
+	RtpSession*	session
+	int		yesno
+
+## Get socket fd
+int
+_get_rtp_fd(session)
+	RtpSession* session
+CODE:
+	RETVAL = get_rtp_fd(session);
+OUTPUT:
+	RETVAL
+
+## Get socket fd
+int
+_get_rtcp_fd(session)
+	RtpSession* session
+CODE:
+	RETVAL = get_rtcp_fd(session);
+OUTPUT:
+	RETVAL
+
 
 
 ## Send RAW RTCP Bye packet
