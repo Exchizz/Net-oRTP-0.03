@@ -131,7 +131,7 @@ _raw_rtp_send(session, packet_ts, buffer)
 	char *buffer
 CODE:
 	mblk_t *m;
-	m = rtp_session_create_packet(session,RTP_FIXED_HEADER_SIZE,(uint8_t*)buffer,strlen(buffer));
+	m = rtp_session_create_packet(session,RTP_FIXED_HEADER_SIZE,(uint8_t*)buffer,4096);
 
 	rtp_header_t *rtp;
 	rtp=(rtp_header_t*)m->b_rptr;
