@@ -92,6 +92,7 @@ sub set_multicast_ttl {
 	my $ttl=shift;
 	rtp_session_set_multicast_ttl( $self->{'session'}, $ttl);
 }
+
 sub raw_rtcp_bye_send {
 	my $self=shift;
 	my ($reason) = @_;
@@ -104,7 +105,7 @@ sub raw_rtp_send {
 	my ($packet_ts, $data) = @_;
 	croak "Missing RTP data parameter" unless defined $data;
 	croak "Missing RTP timestamp parameter" unless defined $packet_ts;
-	_raw_rtp_send( $self->{'session'}, $packet_ts, $data);
+	_raw_rtp_send( $self->{'session'}, $packet_ts, $data, length($data));
 }
 
 sub set_blocking_mode {
