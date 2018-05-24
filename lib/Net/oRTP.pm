@@ -100,12 +100,34 @@ sub raw_rtcp_bye_send {
 	_raw_rtcp_bye_send( $self->{'session'}, $reason);
 }
 
+
+sub set_sdes_items {
+	my $self = shift;
+	my $cname = shift;
+	_set_sdes_items($self->{'session'},$cname);
+}
+
+sub raw_rtcp_sdes_send {
+	my $self = shift;
+	_raw_rtcp_sdes_send($self->{'session'});
+}
+
+
+sub raw_rtcp_sr_send {
+	my $self = shift;
+	my $abs_timestamp = shift;
+	_raw_rtcp_sr_send($self->{'session'}, $abs_timestamp);
+
+}
+
 sub raw_rtp_send {
 	my $self=shift;
-	my ($packet_ts, $data) = @_;
+	my ($packet_ts, $data, $marker) = @_;
+	# Set marker bit to default 0
+	$marker //= 0;
 	croak "Missing RTP data parameter" unless defined $data;
 	croak "Missing RTP timestamp parameter" unless defined $packet_ts;
-	_raw_rtp_send( $self->{'session'}, $packet_ts, $data, length($data));
+	_raw_rtp_send( $self->{'session'}, $packet_ts, $data, length($data), $marker);
 }
 
 sub set_blocking_mode {

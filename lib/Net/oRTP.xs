@@ -46,6 +46,20 @@ int rtp_session_rtp_send (RtpSession * session, mblk_t * m);
 mblk_t *rtcp_create_simple_bye_packet(uint32_t ssrc, const char *reason);
 int rtp_session_rtcp_send (RtpSession * session, mblk_t * m);
 
+static void sender_info_init(sender_info_t *info, RtpSession *session, uint64_t ntp){
+//	struct timeval tv;
+// 	uint64_t ntp;
+//	gettimeofday(&tv,NULL);
+//	ntp=ortp_timeval_to_ntp(&tv);
+	printf("msw: %llu lsw: %llu, input: %llu\n", (ntp >> 32), (ntp & 0xFFFFFFFF), ntp);
+	info->ntp_timestamp_msw=htonl(ntp >>32);
+	info->ntp_timestamp_lsw=htonl(ntp & 0xFFFFFFFF);
+	info->rtp_timestamp=htonl(session->rtp.snd_last_ts);
+	info->senders_packet_count=(uint32_t) htonl((u_long) session->rtp.stats.packet_sent);
+	info->senders_octet_count=(uint32_t) htonl((u_long) session->rtp.sent_payload_bytes);
+	session->rtp.last_rtcp_packet_count=session->rtp.stats.packet_sent;
+}
+
 // Helper functions
 int get_rtcp_fd(RtpSession * session){
 	return session->rtcp.socket;
@@ -104,6 +118,62 @@ OUTPUT:
 
 
 
+## Set SDES items
+bool
+_set_sdes_items(session,cname)
+	RtpSession* session
+	char*cname
+CODE:
+	rtp_session_set_source_description(session, cname, "", "", "", "loc", "MCLURS", "note");
+OUTPUT:
+	0
+
+## Send RAW RTCP SDES packet
+int
+_raw_rtcp_sdes_send(session)
+	RtpSession* session
+CODE:
+	mblk_t *cm;
+	mblk_t *sdes;
+	
+	/* Make a BYE packet (will be on the end of the compund packet). */
+	sdes = rtp_session_create_rtcp_sdes_packet(session);
+	cm=sdes;
+
+	/* Send compound packet. */
+	RETVAL = rtp_session_rtcp_send(session, cm);
+OUTPUT:
+	RETVAL
+
+## Send RAW RTCP SR packet
+int
+_raw_rtcp_sr_send(session, abs_timestamp)
+	RtpSession* session
+	IV abs_timestamp
+CODE:
+
+	mblk_t *cm = allocb(sizeof(rtcp_sr_t), 0);
+	size_t size = sizeof(rtcp_sr_t);
+	rtcp_sr_t *sr=(rtcp_sr_t*)cm->b_wptr;
+	##int rr=(session->stats.packet_recv>0);
+	
+	size_t sr_size=sizeof(rtcp_sr_t)-sizeof(report_block_t);
+	if (size<sr_size) return 0;
+	
+	rtcp_common_header_init(&sr->ch,session,RTCP_SR,0,sr_size);
+	sr->ssrc=htonl(session->snd.ssrc);
+printf("Timestamp c: %llu\n", abs_timestamp);
+	sender_info_init(&sr->si,session, abs_timestamp);
+	
+	cm->b_wptr += sr_size;
+	/* Send compound packet. */
+	RETVAL = rtp_session_rtcp_send(session, cm);
+OUTPUT:
+	RETVAL
+
+
+
+
 ## Send RAW RTCP Bye packet
 int
 _raw_rtcp_bye_send(session, reason)
@@ -125,17 +195,20 @@ OUTPUT:
 
 ## Send RAW RTP packet
 int
-_raw_rtp_send(session, packet_ts, buffer)
+_raw_rtp_send(session, packet_ts, buffer, payload_len, marker)
 	RtpSession* session
 	int packet_ts
 	char *buffer
+	int payload_len
+	int marker
 CODE:
 	mblk_t *m;
-	m = rtp_session_create_packet(session,RTP_FIXED_HEADER_SIZE,(uint8_t*)buffer,4096);
+	m = rtp_session_create_packet(session,RTP_FIXED_HEADER_SIZE,(uint8_t*)buffer,payload_len);
 
 	rtp_header_t *rtp;
 	rtp=(rtp_header_t*)m->b_rptr;
 	rtp->timestamp=packet_ts;
+	rtp->markbit = marker;
 	session->rtp.snd_seq=rtp->seq_number+1;
 	RETVAL = rtp_session_rtp_send (session, m);
 OUTPUT:
