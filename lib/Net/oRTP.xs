@@ -209,6 +209,7 @@ CODE:
 	rtp=(rtp_header_t*)m->b_rptr;
 	rtp->timestamp=packet_ts;
 	rtp->markbit = marker;
+	session->rtp.snd_last_ts = packet_ts;
 	session->rtp.snd_seq=rtp->seq_number+1;
 	RETVAL = rtp_session_rtp_send (session, m);
 OUTPUT:

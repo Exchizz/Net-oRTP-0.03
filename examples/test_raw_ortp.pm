@@ -8,8 +8,18 @@ use IO::Async::Timer::Periodic;
 use IO::Async::Loop;
 
 
-my $ntp = 16046087476961195993;
+#my $ntp = 16046087476961195993;
+#my $ntp = 16047574685033955328;
+#
 
+sub unix_to_ntp {
+ my $unix = shift;
+ my $a = $unix+70*365*24*60*60;
+ $a = $a << 32;
+ return $a;
+}
+
+my $ntp = 16047471910761529344;
 # Unbuffered
 $|=1;
 
@@ -17,7 +27,7 @@ $|=1;
 my $rtp = new Net::oRTP('SENDRECV');
 # Set it up
 $rtp->set_blocking_mode( 0 );
-$rtp->set_remote_addr( '10.10.10.250', 1337 );
+$rtp->set_remote_addr( '192.168.0.10', 1337 );
 $rtp->set_send_payload_type( 0 );
 
 my $ts = 1234;
